@@ -1,0 +1,40 @@
+import boto3
+import json
+
+def lambda_handler(event, context):
+    s3 = boto3.client('s3')
+    sns = boto3.client('sns')
+    
+    # Check if 'Records' key exists in the event
+    if 'Records' not in event:
+        return {
+            'statusCode': 400,
+            'body': json.dumps('Invalid event structure')
+        }
+
+    bucket = event['Records'][0]['s3']['bucket']['name']
+    key = event['Records'][0]['s3']['object']['key']
+    
+    try:
+        # Get the ACL of the uploaded object
+        acl = s3.get_object_acl(Bucket=bucket, Key=key)
+        
+        for grant in acl['Grants']:
+            if 'URI' in grant['Grantee'] and 'AllUsers' in grant['Grantee']['URI']:
+                # If public access found, send a notification
+                sns_topic_arn = 'arn:aws:sns:your-region:your-account-id:your-topic'
+                message = f"Public access object uploaded: s3://{bucket}/{key}"
+                sns.publish(TopicArn=sns_topic_arn, Message=message)
+                break
+        
+        return {
+            'statusCode': 200,
+            'body': json.dumps('Checked object ACL')
+        }
+        
+    except Exception as e:
+        print(e)
+        return {
+            'statusCode': 500,
+            'body': json.dumps('Error checking object ACL')
+        }
