@@ -1,0 +1,22 @@
+import json
+import boto3
+
+def lambda_handler(event, context):
+    ec2 = boto3.client('ec2')
+
+    # Describe all Elastic IP addresses
+    addresses = ec2.describe_addresses()
+
+    for address in addresses['Addresses']:
+        # Check if the Elastic IP is not associated with any instance or network interface
+        if 'AssociationId' not in address:
+            # Release the Elastic IP address
+            ec2.release_address(AllocationId=address['AllocationId'])
+            print(f"Released Elastic IP: {address['PublicIp']} with AllocationId: {address['AllocationId']}")
+        else:
+            print(f"Elastic IP: {address['PublicIp']} is in use")
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps('Released all unused Elastic IP addresses.')
+    }
