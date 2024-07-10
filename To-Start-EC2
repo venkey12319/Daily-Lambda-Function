@@ -1,0 +1,19 @@
+import boto3
+
+def lambda_handler(event, context):
+    ec2 = boto3.client('ec2', region_name='us-east-1')  
+    instance_id = 'i-01d9bd23a2e2e4dc3'
+    
+    try:
+        response = ec2.start_instances(InstanceIds=[instance_id])
+        print(f'Successfully started instance: {instance_id}')
+        return {
+            'statusCode': 200,
+            'body': f'Successfully started instance: {instance_id}'
+        }
+    except Exception as e:
+        print(f'Error started instance: {e}')
+        return {
+            'statusCode': 500,
+            'body': f'Error started instance: {e}'
+        }
