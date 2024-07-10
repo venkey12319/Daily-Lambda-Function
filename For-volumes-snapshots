@@ -1,0 +1,42 @@
+import boto3
+
+def lambda_handler(event, context):
+    ec2 = boto3.client('ec2')
+    
+    # Delete snapshots
+    delete_snapshots(ec2)
+    
+    # Delete unattached volumes
+    delete_unattached_volumes(ec2)
+
+    return {
+        'statusCode': 200,
+        'body': 'Snapshots and unattached volumes deleted successfully'
+    }
+
+def delete_snapshots(ec2):
+    # Get all snapshots
+    snapshots = ec2.describe_snapshots(OwnerIds=['self'])['Snapshots']
+    
+    for snapshot in snapshots:
+        snapshot_id = snapshot['SnapshotId']
+        print(f"Deleting snapshot: {snapshot_id}")
+        
+        # Delete the snapshot
+        ec2.delete_snapshot(SnapshotId=snapshot_id)
+        print(f"Deleted snapshot: {snapshot_id}")
+
+def delete_unattached_volumes(ec2):
+    # Get all volumes
+    volumes = ec2.describe_volumes()['Volumes']
+    
+    for volume in volumes:
+        volume_id = volume['VolumeId']
+        attachments = volume['Attachments']
+        
+        if not attachments:
+            print(f"Deleting unattached volume: {volume_id}")
+            
+            # Delete the volume
+            ec2.delete_volume(VolumeId=volume_id)
+            print(f"Deleted unattached volume: {volume_id}")
