@@ -1,0 +1,20 @@
+import boto3
+
+def lambda_handler(event, context):
+    ec2 = boto3.client('ec2')
+    
+    # Get all snapshots
+    snapshots = ec2.describe_snapshots(OwnerIds=['self'])['Snapshots']
+    
+    for snapshot in snapshots:
+        snapshot_id = snapshot['SnapshotId']
+        print(f"Deleting snapshot: {snapshot_id}")
+        
+        # Delete the snapshot
+        ec2.delete_snapshot(SnapshotId=snapshot_id)
+        print(f"Deleted snapshot: {snapshot_id}")
+
+    return {
+        'statusCode': 200,
+        'body': 'Snapshots deleted successfully'
+    }
